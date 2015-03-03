@@ -21,16 +21,16 @@ namespace get_gmail_attachments
         {
             if (args.Length < 2)
             {
-                Console.WriteLine("Usage: get-gmail-attachments <subject to filter for> <path to write attachments to>");
+                Console.WriteLine("Usage: get-gmail-attachments <search criteria> <path to write attachments to>");
                 return;
             }
 
-            string subjectFilter = args[0];
+            string searchString = args[0];
             string filePath = args[1];
 
             try
             {
-                Run(subjectFilter, filePath).Wait();
+                Run(searchString, filePath).Wait();
             }
             catch (Exception ex)
             {
@@ -38,14 +38,12 @@ namespace get_gmail_attachments
             }
         }
 
-        async static Task Run(string subjectFilter, string filePath)
+        async static Task Run(string searchString, string filePath)
         {
             List<Message> messages = new List<Message>();
             var mailService = await Authenticate();
             var request = mailService.Users.Messages.List(USER_ME);
-
-            subjectFilter = "subject:\"" + subjectFilter + "\"";
-            request.Q = subjectFilter;
+            request.Q = searchString;
             var response = await request.ExecuteAsync();
 
             while (response.Messages != null)
@@ -54,7 +52,7 @@ namespace get_gmail_attachments
                 if (!String.IsNullOrEmpty(response.NextPageToken))
                 {
                     request = mailService.Users.Messages.List(USER_ME);
-                    request.Q = subjectFilter;
+                    request.Q = searchString;
                     request.PageToken = response.NextPageToken;
                     response = await request.ExecuteAsync();
                 }
