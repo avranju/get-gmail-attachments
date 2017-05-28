@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,14 +22,14 @@ namespace get_gmail_attachments
             _mailService = mailService;
         }
 
-        public static async Task<GmailService> Authenticate()
+        public static async Task<GmailService> Authenticate(string secretsFilePath = "client_secret.json", string appName = "")
         {
             UserCredential credential;
             using (var stream = new FileStream("client_secret.json", FileMode.Open, FileAccess.Read))
             {
                 credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(
                     stream,
-                    new[] {GmailService.Scope.GmailReadonly},
+                    new[] {GmailService.Scope.GmailModify},
                     "user",
                     CancellationToken.None,
                     new FileDataStore("Gmail.Attachments"));
@@ -37,7 +38,7 @@ namespace get_gmail_attachments
             var service = new GmailService(new BaseClientService.Initializer()
             {
                 HttpClientInitializer = credential,
-                ApplicationName = "get-gmail-attachments"
+                ApplicationName = appName
             });
 
             return service;
@@ -73,6 +74,12 @@ namespace get_gmail_attachments
         {
             return await _mailService.Users.Messages.Get(UserMe, msg.Id).ExecuteAsync();
         }
+
+        public Task<Message> MarkAsRead(Message msg) =>
+            _mailService.Users.Messages.Modify(
+                new ModifyMessageRequest(){ RemoveLabelIds = new List<string>() {"UNREAD"} },
+                UserMe,
+                msg.Id).ExecuteAsync();
 
         public async Task<MessagePartBody> GetAttachment(Message message, string attachmentId)
         {

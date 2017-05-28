@@ -32,7 +32,7 @@ namespace get_gmail_attachments
 
         static async Task Run(string searchString, string filePath)
         {
-            var gmail = new Gmail(await Gmail.Authenticate());
+            var gmail = new Gmail(await Gmail.Authenticate(appName: "get-gmail-attachments"));
             IList<Message> messages = await gmail.Search(searchString);
 
             foreach (var message in messages)
@@ -50,6 +50,27 @@ namespace get_gmail_attachments
                     }
                 }
             }
+        }
+
+        static async Task MarkAsRead(string searchString)
+        {
+            var gmail = new Gmail(await Gmail.Authenticate(appName: "mark-as-read"));
+
+            Console.WriteLine($"Searching for messages matching search criteria: {searchString}");
+            IList<Message> messages = await gmail.Search(searchString);
+
+            Console.WriteLine($"Marking {messages.Count} messages as read. Hit return to continue.");
+
+            // We don't parallelize requests as much as we can because we don't want to hit
+            // Gmail API rate limits (i.e. the number of requests/second limit).
+            int count = 0;
+            foreach (var message in messages)
+            {
+                await gmail.MarkAsRead(message);
+                Console.Write($"{++count} / {messages.Count} done.\r");
+            }
+
+            Console.WriteLine("All done.");
         }
 
         /// <summary>
