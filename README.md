@@ -1,4 +1,4 @@
-﻿#get-gmail-attachments
+﻿# Get Gmail Attachments
 
 Utility app that downloads email attachments from a Gmail inbox filtering
 for a given search string. You'll need to create a new
