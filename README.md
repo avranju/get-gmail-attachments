@@ -30,7 +30,7 @@ You can run the app from a console window like so:
 
     get-gmail-attachments "subject:Your bank statement" "c:\bank-statements"
 
-This will get all attachments from all mails your gmail inbox that match the string
+This will get all attachments from all mails in your gmail inbox that match the string
 `Your bank statement` in the subject line. You can use all the search operators
 that Gmail supports. The attachments will get saved into the `c:\bank-statements`
 folder.
