@@ -195,5 +195,7 @@ FakesAssemblies/
 # Visual Studio 6 workspace options file
 *.opt
 
+.vscode/
+
 # Google API client secret file
 client_secret.json
