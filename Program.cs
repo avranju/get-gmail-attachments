@@ -22,7 +22,8 @@ namespace get_gmail_attachments
 
             try
             {
-                Run(searchString, filePath).Wait();
+                // Run(searchString, filePath).Wait();
+                MarkAsNotSpam(searchString).Wait();
             }
             catch (Exception ex)
             {
@@ -52,25 +53,45 @@ namespace get_gmail_attachments
             }
         }
 
-        static async Task MarkAsRead(string searchString)
+        static async Task RunOp(string opName, string searchString, Func<Gmail, Message, Task<bool>> op)
         {
-            var gmail = new Gmail(await Gmail.Authenticate(appName: "mark-as-read"));
+            var gmail = new Gmail(await Gmail.Authenticate(appName: opName));
 
             Console.WriteLine($"Searching for messages matching search criteria: {searchString}");
-            IList<Message> messages = await gmail.Search(searchString);
-
-            Console.WriteLine($"Marking {messages.Count} messages as read. Hit return to continue.");
-
-            // We don't parallelize requests as much as we can because we don't want to hit
-            // Gmail API rate limits (i.e. the number of requests/second limit).
-            int count = 0;
-            foreach (var message in messages)
+            long count = 0;
+            await gmail.Search(searchString, async (message, totalCount) =>
             {
-                await gmail.MarkAsRead(message);
-                Console.Write($"{++count} / {messages.Count} done.\r");
-            }
+                if (await op(gmail, message) == false)
+                {
+                    Console.WriteLine($"Exiting after processing {++count} / {totalCount} messages.");
+                    return false;
+                }
+                Console.Write($"{++count} / {totalCount} done.\r");
+                return true;
+            });
 
             Console.WriteLine("All done.");
+        }
+
+        static Task MarkAsRead(string searchString)
+        {
+            return RunOp("mark-as-read", searchString, async (gmail, msg) => {
+                await gmail.MarkAsRead(msg);
+                return true;
+            });
+        }
+
+        static string GetHeader(IList<MessagePartHeader> headers, string name)
+        {
+            return headers.Where(h => h.Name == name).Select(h => h.Value).FirstOrDefault();
+        }
+
+        static Task MarkAsNotSpam(string searchString)
+        {
+            return RunOp("mark-as-not-spam", searchString, async (gmail, msg) => {
+                await gmail.MarkAsNotSpam(msg);
+                return true;
+            });
         }
 
         /// <summary>
